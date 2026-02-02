@@ -42,7 +42,13 @@ def main():
     if args.command == "start":
         repo_path = os.path.abspath(args.repo) if os.path.exists(args.repo) else args.repo
         task = allocator.create_task(args.name, args.description, repo_path)
+
+        # Get the session that was just created for this task
+        sessions = [s for s in state.sessions.values() if s.task_id == task.id]
+        session_id = sessions[0].id if sessions else "N/A"
+
         print(f"Created task {task.id}: {task.name}")
+        print(f"Associated session: {session_id}")
         print(f"Run 'aflow-daemon' to process it.")
 
     elif args.command == "list":

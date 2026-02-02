@@ -2,7 +2,7 @@ import os
 import time
 import threading
 from typing import Dict, List
-from aflow.models import Task, TaskStatus, Session
+from aflow.models import Task, TaskStatus, Session, SessionStatus
 from aflow.state import AflowState
 from aflow.queue import TaskQueue
 from aflow.session import SessionManager
@@ -36,31 +36,40 @@ class TaskRunner:
         task.status = TaskStatus.RUNNING
         self.state.save()
 
-        # Ensure at least one session exists
+        # Get all sessions for this task
         sessions = [s for s in self.state.sessions.values() if s.task_id == self.task_id]
+
+        # If no sessions exist (shouldn't happen now but good for safety), create one
         if not sessions:
-            session = self.session_manager.create_session(task)
-            # For now, let's assume we run "claude" by default.
-            # In a real app, this would be configurable.
-            # For testing, we might want to override this.
-            env = {
-                "AFLOW_PARENT_TASK_ID": self.task_id,
-                "AFLOW_REPO_PATH": task.repo_path
-            }
-            self.session_manager.start_session(
-                session,
-                os.environ.get("AFLOW_COMMAND", "claude"),
-                env=env
-            )
+            session = self.session_manager.register_session(self.task_id)
             sessions = [session]
+
+        # Prepare and start any sessions that haven't been started
+        for session in sessions:
+            if session.status == SessionStatus.CREATED:
+                # 1. Prepare workspace
+                print(f"Preparing workspace for session {session.id}")
+                self.session_manager.prepare_session(session, task.repo_path)
+
+                # 2. Start tmux
+                env = {
+                    "AFLOW_PARENT_TASK_ID": self.task_id,
+                    "AFLOW_REPO_PATH": task.repo_path
+                }
+                self.session_manager.start_session(
+                    session,
+                    os.environ.get("AFLOW_COMMAND", "claude"),
+                    env=env
+                )
 
         while self.running:
             pending_messages = self.queue.get_pending(self.task_id)
             for msg in pending_messages:
                 print(f"Task {self.task_id} processing message: {msg.content}")
-                # Pass information to all sessions for this task
+                # Pass information to all active sessions for this task
                 for session in sessions:
-                    self.session_manager.send_to_session(session, msg.content)
+                    if session.status == SessionStatus.RUNNING:
+                        self.session_manager.send_to_session(session, msg.content)
                 self.queue.mark_processed(msg.id)
 
             time.sleep(1)

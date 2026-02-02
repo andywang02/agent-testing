@@ -2,11 +2,13 @@ from typing import Optional
 from aflow.models import Task, TaskStatus
 from aflow.state import AflowState
 from aflow.queue import TaskQueue
+from aflow.session import SessionManager
 
 class TaskAllocator:
     def __init__(self, state: AflowState):
         self.state = state
         self.queue = TaskQueue(state)
+        self.session_manager = SessionManager(state)
 
     def create_task(self, name: str, description: str, repo_path: str, parent_task_id: Optional[str] = None) -> Task:
         task = Task(
@@ -17,7 +19,10 @@ class TaskAllocator:
             status=TaskStatus.PENDING
         )
         self.state.tasks[task.id] = task
-        self.state.save()
+        # No save here, register_session will save it
+
+        # Register an initial session for this task immediately
+        self.session_manager.register_session(task.id)
 
         # Initial message to start the task
         self.queue.put(task.id, f"START: {description}")

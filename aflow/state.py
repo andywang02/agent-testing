@@ -20,6 +20,9 @@ class AflowState:
     def _ensure_home(self):
         AFLOW_HOME.mkdir(parents=True, exist_ok=True)
         (AFLOW_HOME / "workspaces").mkdir(parents=True, exist_ok=True)
+        if not STATE_FILE.exists():
+            with open(STATE_FILE, "w") as f:
+                f.write("{}")
 
     def save(self):
         data = {
@@ -27,9 +30,12 @@ class AflowState:
             "sessions": {k: self._serialize_session(v) for k, v in self.sessions.items()},
             "messages": [self._serialize_message(m) for m in self.messages]
         }
-        with open(STATE_FILE, "w") as f:
+        # Use a+ to avoid truncation before lock
+        with open(STATE_FILE, "a+") as f:
             try:
                 fcntl.flock(f, fcntl.LOCK_EX)
+                f.seek(0)
+                f.truncate()
                 json.dump(data, f, indent=2)
             finally:
                 fcntl.flock(f, fcntl.LOCK_UN)

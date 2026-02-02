@@ -18,6 +18,8 @@ class TestRunner(unittest.TestCase):
             shutil.rmtree(self.test_home)
         aflow.state.AFLOW_HOME = self.test_home
         aflow.state.STATE_FILE = self.test_home / "state.json"
+        import aflow.session
+        aflow.session.AFLOW_HOME = self.test_home
         self.state = AflowState()
         self.allocator = TaskAllocator(self.state)
 

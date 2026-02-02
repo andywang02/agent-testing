@@ -8,34 +8,32 @@ class SessionManager:
     def __init__(self, state: AflowState):
         self.state = state
 
-    def create_session(self, task: Task) -> Session:
-        session = Session(task_id=task.id)
+    def register_session(self, task_id: str) -> Session:
+        session = Session(task_id=task_id)
+        session.tmux_session_id = f"aflow-{session.id[:8]}"
+        self.state.sessions[session.id] = session
+        self.state.save()
+        return session
+
+    def prepare_session(self, session: Session, repo_path: str):
         workspace_base = AFLOW_HOME / "workspaces" / session.id
         workspace_base.mkdir(parents=True, exist_ok=True)
 
         repo_dir = workspace_base / "repo"
 
         # Clone the repo
-        if not os.path.exists(task.repo_path):
+        if not os.path.exists(repo_path):
             # Try to clone as URL
-             subprocess.run(["git", "clone", task.repo_path, str(repo_dir)], check=True)
+             subprocess.run(["git", "clone", repo_path, str(repo_dir)], check=True)
         else:
             # Local path, use shared clone if possible
-            subprocess.run(["git", "clone", "--shared", task.repo_path, str(repo_dir)], check=True)
+            subprocess.run(["git", "clone", "--shared", repo_path, str(repo_dir)], check=True)
 
         session.workspace_path = str(repo_dir)
-        session.tmux_session_id = f"aflow-{session.id[:8]}"
-
-        self.state.sessions[session.id] = session
         self.state.save()
-        return session
 
     def start_session(self, session: Session, command: str, env: dict = None):
         # Start tmux session in background
-        # -d: detached
-        # -s: session name
-        # command: the command to run
-
         env_str = ""
         if env:
             for k, v in env.items():

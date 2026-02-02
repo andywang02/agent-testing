@@ -16,6 +16,11 @@ class TestSession(unittest.TestCase):
             shutil.rmtree(self.test_home)
         aflow.state.AFLOW_HOME = self.test_home
         aflow.state.STATE_FILE = self.test_home / "state.json"
+
+        # NOTE: Also need to patch it in other modules if they import it directly
+        import aflow.session
+        aflow.session.AFLOW_HOME = self.test_home
+
         self.state = AflowState()
         self.session_manager = SessionManager(self.state)
 
@@ -39,7 +44,10 @@ class TestSession(unittest.TestCase):
 
     def test_create_and_start_session(self):
         task = Task(name="Test Task", repo_path=str(self.dummy_repo))
-        session = self.session_manager.create_session(task)
+        self.state.tasks[task.id] = task
+
+        session = self.session_manager.register_session(task.id)
+        self.session_manager.prepare_session(session, task.repo_path)
 
         self.assertTrue(os.path.exists(session.workspace_path))
         self.assertTrue(os.path.exists(os.path.join(session.workspace_path, ".git")))

@@ -27,7 +27,12 @@ def spawn():
         parent_task_id=parent_task_id
     )
 
+    # Get the session that was just created for this task
+    sessions = [s for s in state.sessions.values() if s.task_id == task.id]
+    session_id = sessions[0].id if sessions else "N/A"
+
     print(f"Spawned sub-task {task.id}: {task.name}")
+    print(f"Associated session: {session_id}")
 
 if __name__ == "__main__":
     spawn()
