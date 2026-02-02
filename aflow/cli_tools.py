@@ -1,8 +1,8 @@
 import argparse
 import os
 import sys
-from swarm.state import SwarmState
-from swarm.allocator import TaskAllocator
+from aflow.state import AflowState
+from aflow.allocator import TaskAllocator
 
 def spawn():
     parser = argparse.ArgumentParser(description="Spawn a sub-task from an agent session.")
@@ -10,14 +10,14 @@ def spawn():
     parser.add_argument("--name", help="Name of the sub-task", default="Subtask")
     args = parser.parse_args()
 
-    parent_task_id = os.environ.get("SWARM_PARENT_TASK_ID")
-    repo_path = os.environ.get("SWARM_REPO_PATH")
+    parent_task_id = os.environ.get("AFLOW_PARENT_TASK_ID")
+    repo_path = os.environ.get("AFLOW_REPO_PATH")
 
     if not repo_path:
-        print("Error: SWARM_REPO_PATH not found in environment.")
+        print("Error: AFLOW_REPO_PATH not found in environment.")
         sys.exit(1)
 
-    state = SwarmState()
+    state = AflowState()
     allocator = TaskAllocator(state)
 
     task = allocator.create_task(

@@ -4,12 +4,12 @@ import time
 import fcntl
 from pathlib import Path
 from typing import Dict, List
-from swarm.models import Task, Session, Message, TaskStatus, SessionStatus
+from aflow.models import Task, Session, Message, TaskStatus, SessionStatus
 
-SWARM_HOME = Path.home() / ".swarm"
-STATE_FILE = SWARM_HOME / "state.json"
+AFLOW_HOME = Path.home() / ".aflow"
+STATE_FILE = AFLOW_HOME / "state.json"
 
-class SwarmState:
+class AflowState:
     def __init__(self):
         self.tasks: Dict[str, Task] = {}
         self.sessions: Dict[str, Session] = {}
@@ -18,8 +18,8 @@ class SwarmState:
         self.load()
 
     def _ensure_home(self):
-        SWARM_HOME.mkdir(parents=True, exist_ok=True)
-        (SWARM_HOME / "workspaces").mkdir(parents=True, exist_ok=True)
+        AFLOW_HOME.mkdir(parents=True, exist_ok=True)
+        (AFLOW_HOME / "workspaces").mkdir(parents=True, exist_ok=True)
 
     def save(self):
         data = {
@@ -40,25 +40,28 @@ class SwarmState:
 
         # Simple retry for concurrency
         for _ in range(5):
+            f = None
             try:
-                with open(STATE_FILE, "r") as f:
-                    fcntl.flock(f, fcntl.LOCK_SH)
-                    content = f.read()
-                    if not content:
-                        time.sleep(0.1)
-                        continue
-                    data = json.loads(content)
-                    self.tasks = {k: self._deserialize_task(v) for k, v in data.get("tasks", {}).items()}
-                    self.sessions = {k: self._deserialize_session(v) for k, v in data.get("sessions", {}).items()}
-                    self.messages = [self._deserialize_message(m) for m in data.get("messages", [])]
-                    return
+                f = open(STATE_FILE, "r")
+                fcntl.flock(f, fcntl.LOCK_SH)
+                content = f.read()
+                if not content:
+                    time.sleep(0.1)
+                    continue
+                data = json.loads(content)
+                self.tasks = {k: self._deserialize_task(v) for k, v in data.get("tasks", {}).items()}
+                self.sessions = {k: self._deserialize_session(v) for k, v in data.get("sessions", {}).items()}
+                self.messages = [self._deserialize_message(m) for m in data.get("messages", [])]
+                return
             except (json.JSONDecodeError, IOError):
                 time.sleep(0.1)
             finally:
-                try:
-                    fcntl.flock(f, fcntl.LOCK_UN)
-                except:
-                    pass
+                if f:
+                    try:
+                        fcntl.flock(f, fcntl.LOCK_UN)
+                        f.close()
+                    except:
+                        pass
 
     def _serialize_task(self, t: Task) -> dict:
         return {

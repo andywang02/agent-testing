@@ -4,19 +4,19 @@ import os
 import subprocess
 import time
 from pathlib import Path
-from swarm.state import SwarmState
-import swarm.state
-from swarm.models import Task
-from swarm.session import SessionManager
+from aflow.state import AflowState
+import aflow.state
+from aflow.models import Task
+from aflow.session import SessionManager
 
 class TestSession(unittest.TestCase):
     def setUp(self):
-        self.test_home = Path("/tmp/swarm_test_session")
+        self.test_home = Path("/tmp/aflow_test_session")
         if self.test_home.exists():
             shutil.rmtree(self.test_home)
-        swarm.state.SWARM_HOME = self.test_home
-        swarm.state.STATE_FILE = self.test_home / "state.json"
-        self.state = SwarmState()
+        aflow.state.AFLOW_HOME = self.test_home
+        aflow.state.STATE_FILE = self.test_home / "state.json"
+        self.state = AflowState()
         self.session_manager = SessionManager(self.state)
 
         # Create a dummy repo to clone
@@ -35,7 +35,7 @@ class TestSession(unittest.TestCase):
         if self.dummy_repo.exists():
             shutil.rmtree(self.dummy_repo)
         # Kill any leaked tmux sessions
-        subprocess.run(["pkill", "-f", "swarm-"], check=False)
+        subprocess.run(["pkill", "-f", "aflow-"], check=False)
 
     def test_create_and_start_session(self):
         task = Task(name="Test Task", repo_path=str(self.dummy_repo))

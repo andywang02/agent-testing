@@ -1,10 +1,10 @@
 from typing import Optional
-from swarm.models import Task, TaskStatus
-from swarm.state import SwarmState
-from swarm.queue import TaskQueue
+from aflow.models import Task, TaskStatus
+from aflow.state import AflowState
+from aflow.queue import TaskQueue
 
 class TaskAllocator:
-    def __init__(self, state: SwarmState):
+    def __init__(self, state: AflowState):
         self.state = state
         self.queue = TaskQueue(state)
 

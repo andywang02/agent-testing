@@ -1,13 +1,14 @@
+import os
 import time
 import threading
 from typing import Dict, List
-from swarm.models import Task, TaskStatus, Session
-from swarm.state import SwarmState
-from swarm.queue import TaskQueue
-from swarm.session import SessionManager
+from aflow.models import Task, TaskStatus, Session
+from aflow.state import AflowState
+from aflow.queue import TaskQueue
+from aflow.session import SessionManager
 
 class TaskRunner:
-    def __init__(self, state: SwarmState, task_id: str):
+    def __init__(self, state: AflowState, task_id: str):
         self.state = state
         self.task_id = task_id
         self.queue = TaskQueue(state)
@@ -43,12 +44,12 @@ class TaskRunner:
             # In a real app, this would be configurable.
             # For testing, we might want to override this.
             env = {
-                "SWARM_PARENT_TASK_ID": self.task_id,
-                "SWARM_REPO_PATH": task.repo_path
+                "AFLOW_PARENT_TASK_ID": self.task_id,
+                "AFLOW_REPO_PATH": task.repo_path
             }
             self.session_manager.start_session(
                 session,
-                os.environ.get("SWARM_COMMAND", "claude"),
+                os.environ.get("AFLOW_COMMAND", "claude"),
                 env=env
             )
             sessions = [session]
@@ -64,8 +65,8 @@ class TaskRunner:
 
             time.sleep(1)
 
-class SwarmDaemon:
-    def __init__(self, state: SwarmState):
+class AflowDaemon:
+    def __init__(self, state: AflowState):
         self.state = state
         self.runners: Dict[str, TaskRunner] = {}
         self.running = False
@@ -87,5 +88,3 @@ class SwarmDaemon:
         self.running = False
         for runner in self.runners.values():
             runner.stop()
-
-import os

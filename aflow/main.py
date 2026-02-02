@@ -2,13 +2,13 @@ import argparse
 import os
 import sys
 import subprocess
-from swarm.state import SwarmState
-from swarm.allocator import TaskAllocator
-from swarm.session import SessionManager
-from swarm.models import TaskStatus
+from aflow.state import AflowState
+from aflow.allocator import TaskAllocator
+from aflow.session import SessionManager
+from aflow.models import TaskStatus
 
 def main():
-    parser = argparse.ArgumentParser(description="Swarm: Parallel Claude Code Sessions")
+    parser = argparse.ArgumentParser(description="Aflow: Parallel Claude Code Sessions")
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
     # Start
@@ -36,14 +36,14 @@ def main():
 
     args = parser.parse_args()
 
-    state = SwarmState()
+    state = AflowState()
     allocator = TaskAllocator(state)
 
     if args.command == "start":
         repo_path = os.path.abspath(args.repo) if os.path.exists(args.repo) else args.repo
         task = allocator.create_task(args.name, args.description, repo_path)
         print(f"Created task {task.id}: {task.name}")
-        print(f"Run 'swarm-daemon' to process it.")
+        print(f"Run 'aflow-daemon' to process it.")
 
     elif args.command == "list":
         print(f"{'ID':<38} {'NAME':<20} {'STATUS':<10}")

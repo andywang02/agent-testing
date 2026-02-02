@@ -5,20 +5,20 @@ import subprocess
 import time
 import threading
 from pathlib import Path
-from swarm.state import SwarmState
-import swarm.state
-from swarm.allocator import TaskAllocator
-from swarm.runner import TaskRunner, SwarmDaemon
-from swarm.models import TaskStatus
+from aflow.state import AflowState
+import aflow.state
+from aflow.allocator import TaskAllocator
+from aflow.runner import TaskRunner, AflowDaemon
+from aflow.models import TaskStatus
 
 class TestRunner(unittest.TestCase):
     def setUp(self):
-        self.test_home = Path("/tmp/swarm_test_runner")
+        self.test_home = Path("/tmp/aflow_test_runner")
         if self.test_home.exists():
             shutil.rmtree(self.test_home)
-        swarm.state.SWARM_HOME = self.test_home
-        swarm.state.STATE_FILE = self.test_home / "state.json"
-        self.state = SwarmState()
+        aflow.state.AFLOW_HOME = self.test_home
+        aflow.state.STATE_FILE = self.test_home / "state.json"
+        self.state = AflowState()
         self.allocator = TaskAllocator(self.state)
 
         # Create a dummy repo
@@ -32,19 +32,19 @@ class TestRunner(unittest.TestCase):
         subprocess.run(["git", "commit", "-m", "initial commit"], cwd=self.dummy_repo)
 
         # Set mock command
-        os.environ["SWARM_COMMAND"] = f"python3 {os.path.abspath('tests/mock_claude.py')}"
+        os.environ["AFLOW_COMMAND"] = f"python3 {os.path.abspath('tests/mock_claude.py')}"
 
     def tearDown(self):
         if self.test_home.exists():
             shutil.rmtree(self.test_home)
         if self.dummy_repo.exists():
             shutil.rmtree(self.dummy_repo)
-        subprocess.run(["pkill", "-f", "swarm-"], check=False)
+        subprocess.run(["pkill", "-f", "aflow-"], check=False)
 
     def test_end_to_end_runner(self):
         task = self.allocator.create_task("Runner Task", "End to end test", str(self.dummy_repo))
 
-        daemon = SwarmDaemon(self.state)
+        daemon = AflowDaemon(self.state)
         daemon_thread = threading.Thread(target=daemon.start, daemon=True)
         daemon_thread.start()
 

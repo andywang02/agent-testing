@@ -1,16 +1,16 @@
 import os
 import subprocess
 from pathlib import Path
-from swarm.models import Session, SessionStatus, Task
-from swarm.state import SwarmState, SWARM_HOME
+from aflow.models import Session, SessionStatus, Task
+from aflow.state import AflowState, AFLOW_HOME
 
 class SessionManager:
-    def __init__(self, state: SwarmState):
+    def __init__(self, state: AflowState):
         self.state = state
 
     def create_session(self, task: Task) -> Session:
         session = Session(task_id=task.id)
-        workspace_base = SWARM_HOME / "workspaces" / session.id
+        workspace_base = AFLOW_HOME / "workspaces" / session.id
         workspace_base.mkdir(parents=True, exist_ok=True)
 
         repo_dir = workspace_base / "repo"
@@ -24,7 +24,7 @@ class SessionManager:
             subprocess.run(["git", "clone", "--shared", task.repo_path, str(repo_dir)], check=True)
 
         session.workspace_path = str(repo_dir)
-        session.tmux_session_id = f"swarm-{session.id[:8]}"
+        session.tmux_session_id = f"aflow-{session.id[:8]}"
 
         self.state.sessions[session.id] = session
         self.state.save()

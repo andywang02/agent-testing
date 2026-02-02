@@ -1,9 +1,9 @@
 from typing import List, Optional
-from swarm.models import Message
-from swarm.state import SwarmState
+from aflow.models import Message
+from aflow.state import AflowState
 
 class TaskQueue:
-    def __init__(self, state: SwarmState):
+    def __init__(self, state: AflowState):
         self.state = state
 
     def put(self, task_id: str, content: str) -> Message:

@@ -1,19 +1,19 @@
 import unittest
 import shutil
 from pathlib import Path
-from swarm.state import SwarmState
-import swarm.state
-from swarm.allocator import TaskAllocator
-from swarm.queue import TaskQueue
+from aflow.state import AflowState
+import aflow.state
+from aflow.allocator import TaskAllocator
+from aflow.queue import TaskQueue
 
 class TestQueue(unittest.TestCase):
     def setUp(self):
-        self.test_home = Path("/tmp/swarm_test_queue")
+        self.test_home = Path("/tmp/aflow_test_queue")
         if self.test_home.exists():
             shutil.rmtree(self.test_home)
-        swarm.state.SWARM_HOME = self.test_home
-        swarm.state.STATE_FILE = self.test_home / "state.json"
-        self.state = SwarmState()
+        aflow.state.AFLOW_HOME = self.test_home
+        aflow.state.STATE_FILE = self.test_home / "state.json"
+        self.state = AflowState()
         self.allocator = TaskAllocator(self.state)
         self.queue = TaskQueue(self.state)
 
