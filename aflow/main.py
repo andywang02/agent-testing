@@ -5,7 +5,7 @@ import subprocess
 from aflow.state import AflowState
 from aflow.allocator import TaskAllocator
 from aflow.session import SessionManager
-from aflow.models import TaskStatus
+from aflow.models import TaskStatus, WorkspaceStrategy
 
 def main():
     parser = argparse.ArgumentParser(description="Aflow: Parallel Claude Code Sessions")
@@ -16,6 +16,9 @@ def main():
     start_parser.add_argument("description", help="Task description")
     start_parser.add_argument("--name", help="Task name", default="Task")
     start_parser.add_argument("--repo", help="Repo path or URL", default=".")
+    start_parser.add_argument("--strategy", choices=[s.value for s in WorkspaceStrategy],
+                               default=WorkspaceStrategy.CLONE.value, help="Workspace strategy")
+    start_parser.add_argument("--branch", help="Git branch (for worktree strategy)")
 
     # List
     list_parser = subparsers.add_parser("list", help="List tasks and sessions")
@@ -41,7 +44,9 @@ def main():
 
     if args.command == "start":
         repo_path = os.path.abspath(args.repo) if os.path.exists(args.repo) else args.repo
-        task = allocator.create_task(args.name, args.description, repo_path)
+        strategy = WorkspaceStrategy(args.strategy)
+        task = allocator.create_task(args.name, args.description, repo_path,
+                                     strategy=strategy, branch=args.branch)
 
         # Get the session that was just created for this task
         sessions = [s for s in state.sessions.values() if s.task_id == task.id]
@@ -49,12 +54,15 @@ def main():
 
         print(f"Created task {task.id}: {task.name}")
         print(f"Associated session: {session_id}")
+        print(f"Strategy: {strategy.value}")
+        if args.branch:
+            print(f"Branch: {args.branch}")
         print(f"Run 'aflow-daemon' to process it.")
 
     elif args.command == "list":
-        print(f"{'ID':<38} {'NAME':<20} {'STATUS':<10}")
+        print(f"{'ID':<38} {'NAME':<20} {'STRATEGY':<10} {'STATUS':<10}")
         for task in state.tasks.values():
-            print(f"{task.id:<38} {task.name:<20} {task.status.value:<10}")
+            print(f"{task.id:<38} {task.name:<20} {task.strategy.value:<10} {task.status.value:<10}")
 
         print("\nSessions:")
         print(f"{'ID':<38} {'TASK_ID':<38} {'TMUX':<15} {'STATUS':<10}")

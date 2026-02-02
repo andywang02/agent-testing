@@ -1,5 +1,5 @@
 from typing import Optional
-from aflow.models import Task, TaskStatus
+from aflow.models import Task, TaskStatus, WorkspaceStrategy
 from aflow.state import AflowState
 from aflow.queue import TaskQueue
 from aflow.session import SessionManager
@@ -10,11 +10,16 @@ class TaskAllocator:
         self.queue = TaskQueue(state)
         self.session_manager = SessionManager(state)
 
-    def create_task(self, name: str, description: str, repo_path: str, parent_task_id: Optional[str] = None) -> Task:
+    def create_task(self, name: str, description: str, repo_path: str,
+                    strategy: WorkspaceStrategy = WorkspaceStrategy.CLONE,
+                    branch: Optional[str] = None,
+                    parent_task_id: Optional[str] = None) -> Task:
         task = Task(
             name=name,
             description=description,
             repo_path=repo_path,
+            strategy=strategy,
+            branch=branch,
             parent_task_id=parent_task_id,
             status=TaskStatus.PENDING
         )

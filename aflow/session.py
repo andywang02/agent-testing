@@ -1,7 +1,7 @@
 import os
 import subprocess
 from pathlib import Path
-from aflow.models import Session, SessionStatus, Task
+from aflow.models import Session, SessionStatus, Task, WorkspaceStrategy
 from aflow.state import AflowState, AFLOW_HOME
 
 class SessionManager:
@@ -15,21 +15,40 @@ class SessionManager:
         self.state.save()
         return session
 
-    def prepare_session(self, session: Session, repo_path: str):
+    def prepare_session(self, session: Session, task: Task):
         workspace_base = AFLOW_HOME / "workspaces" / session.id
         workspace_base.mkdir(parents=True, exist_ok=True)
 
         repo_dir = workspace_base / "repo"
 
-        # Clone the repo
-        if not os.path.exists(repo_path):
-            # Try to clone as URL
-             subprocess.run(["git", "clone", repo_path, str(repo_dir)], check=True)
-        else:
-            # Local path, use shared clone if possible
-            subprocess.run(["git", "clone", "--shared", repo_path, str(repo_dir)], check=True)
+        if task.strategy == WorkspaceStrategy.REPO:
+            session.workspace_path = str(os.path.abspath(task.repo_path))
 
-        session.workspace_path = str(repo_dir)
+        elif task.strategy == WorkspaceStrategy.CLONE:
+            # Clone the repo
+            if not os.path.exists(task.repo_path):
+                # Try to clone as URL
+                subprocess.run(["git", "clone", task.repo_path, str(repo_dir)], check=True)
+            else:
+                # Local path, use shared clone if possible
+                subprocess.run(["git", "clone", "--shared", task.repo_path, str(repo_dir)], check=True)
+            session.workspace_path = str(repo_dir)
+
+        elif task.strategy == WorkspaceStrategy.WORKTREE:
+            if not os.path.exists(task.repo_path):
+                raise ValueError(f"Worktree strategy requires a local repository path, got {task.repo_path}")
+
+            branch = task.branch
+            if not branch:
+                # Create a temporary branch name
+                branch = f"aflow-tmp-{session.id[:8]}"
+                # Create the branch at the current HEAD of the source repo
+                subprocess.run(["git", "branch", branch], cwd=task.repo_path, check=True)
+
+            # Add worktree
+            subprocess.run(["git", "worktree", "add", str(repo_dir), branch], cwd=task.repo_path, check=True)
+            session.workspace_path = str(repo_dir)
+
         self.state.save()
 
     def start_session(self, session: Session, command: str, env: dict = None):

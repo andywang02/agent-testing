@@ -47,7 +47,8 @@ class TestSession(unittest.TestCase):
         self.state.tasks[task.id] = task
 
         session = self.session_manager.register_session(task.id)
-        self.session_manager.prepare_session(session, task.repo_path)
+        # Fix: Pass task object instead of repo_path string
+        self.session_manager.prepare_session(session, task)
 
         self.assertTrue(os.path.exists(session.workspace_path))
         self.assertTrue(os.path.exists(os.path.join(session.workspace_path, ".git")))

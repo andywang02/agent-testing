@@ -48,8 +48,8 @@ class TaskRunner:
         for session in sessions:
             if session.status == SessionStatus.CREATED:
                 # 1. Prepare workspace
-                print(f"Preparing workspace for session {session.id}")
-                self.session_manager.prepare_session(session, task.repo_path)
+                print(f"Preparing workspace for session {session.id} with strategy {task.strategy.value}")
+                self.session_manager.prepare_session(session, task)
 
                 # 2. Start tmux
                 env = {

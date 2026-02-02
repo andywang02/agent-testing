@@ -15,6 +15,11 @@ class SessionStatus(Enum):
     RUNNING = "running"
     STOPPED = "stopped"
 
+class WorkspaceStrategy(Enum):
+    REPO = "repo"
+    CLONE = "clone"
+    WORKTREE = "worktree"
+
 @dataclass
 class Message:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -37,6 +42,8 @@ class Task:
     name: str = ""
     description: str = ""
     repo_path: str = ""
+    strategy: WorkspaceStrategy = WorkspaceStrategy.CLONE
+    branch: Optional[str] = None
     status: TaskStatus = TaskStatus.PENDING
     created_at: float = field(default_factory=time.time)
     parent_task_id: Optional[str] = None

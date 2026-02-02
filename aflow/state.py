@@ -4,7 +4,7 @@ import time
 import fcntl
 from pathlib import Path
 from typing import Dict, List
-from aflow.models import Task, Session, Message, TaskStatus, SessionStatus
+from aflow.models import Task, Session, Message, TaskStatus, SessionStatus, WorkspaceStrategy
 
 AFLOW_HOME = Path.home() / ".aflow"
 STATE_FILE = AFLOW_HOME / "state.json"
@@ -75,6 +75,8 @@ class AflowState:
             "name": t.name,
             "description": t.description,
             "repo_path": t.repo_path,
+            "strategy": t.strategy.value,
+            "branch": t.branch,
             "status": t.status.value,
             "created_at": t.created_at,
             "parent_task_id": t.parent_task_id
@@ -86,6 +88,8 @@ class AflowState:
             name=d["name"],
             description=d["description"],
             repo_path=d.get("repo_path", ""),
+            strategy=WorkspaceStrategy(d.get("strategy", "clone")),
+            branch=d.get("branch"),
             status=TaskStatus(d["status"]),
             created_at=d["created_at"],
             parent_task_id=d.get("parent_task_id")
